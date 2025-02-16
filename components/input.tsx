@@ -4,9 +4,10 @@ import { Search as SearchIcon } from "lucide-react-native"
 interface SearchProps {
   text: string,
   onTextChange?: (text: string) => void
+  onFocusChanged?: (focused: boolean) => void
 }
 
-export function Search({text, onTextChange}: SearchProps){
+export function Search({text, onTextChange, onFocusChanged}: SearchProps){
   return (
     <View style={searchStyles.root}>
       <SearchIcon color="#8a8a8d" size={20}/>
@@ -15,10 +16,12 @@ export function Search({text, onTextChange}: SearchProps){
         placeholderTextColor="#8a8a8d"
         style={{
           color: "#ffffff",
-          width: "100%"
+          flex: 1
         }}
         defaultValue={text}
         onEndEditing={(e) => onTextChange?.(e.nativeEvent.text)}
+        onFocus={() => onFocusChanged?.(true)}
+        onBlur={() => onFocusChanged?.(false)}
         keyboardType="url"
         selectTextOnFocus
       />
@@ -36,6 +39,7 @@ const searchStyles = StyleSheet.create({
     flexDirection: "row",
     gap: 3,
     alignItems: "center",
-    minHeight: 45
+    minHeight: 45,
+    overflow: "scroll"
   }
 })
