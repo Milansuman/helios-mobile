@@ -11,12 +11,52 @@ interface Props{
   onUrlChange?: (url: string) => void,
 }
 
+const useSearchAnimation = (isSearching: boolean) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const slideAnim = useRef(new Animated.Value(50)).current
+  const scaleAnim = useRef(new Animated.Value(0.95)).current
+
+  useEffect(() => {
+    const showAnimation = Animated.parallel([
+      Animated.spring(fadeAnim, {
+        toValue: isSearching ? 1 : 0,
+        useNativeDriver: true,
+        damping: 20,
+        mass: 0.8,
+        stiffness: 100,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: isSearching ? 0 : 50,
+        useNativeDriver: true,
+        damping: 20,
+        mass: 0.8,
+        stiffness: 100,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: isSearching ? 1 : 0.95,
+        useNativeDriver: true,
+        damping: 20,
+        mass: 0.8,
+        stiffness: 100,
+      }),
+    ])
+
+    showAnimation.start()
+
+    return () => {
+      showAnimation.stop()
+    }
+  }, [isSearching, fadeAnim, slideAnim, scaleAnim])
+
+  return { fadeAnim, slideAnim, scaleAnim }
+}
+
 export function Tab({url, onUrlChange}: Props){
   const [text, setText] = useState(url)
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchSuggestionsShown, setIsSearchSuggestionsShown] = useState(false);
   const webview = useRef<WebView | null>(null)
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { fadeAnim, slideAnim, scaleAnim } = useSearchAnimation(isSearching)
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -46,13 +86,6 @@ export function Tab({url, onUrlChange}: Props){
 
   useEffect(() => {
     setIsSearchSuggestionsShown(true);
-    Animated.timing(fadeAnim, {
-      toValue: isSearching ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsSearchSuggestionsShown(isSearching);
-    });
   }, [isSearching]);
 
   return (
@@ -66,9 +99,35 @@ export function Tab({url, onUrlChange}: Props){
           }}
           ref={webview}
         />
-        {isSearchSuggestionsShown && (
-          <Animated.View style={[styles.search, { opacity: fadeAnim }]}>
-            <Text style={{color: "white"}}>This is where the search suggestions will be :)</Text>
+        {isSearching && (
+          <Animated.View 
+            style={[
+              styles.search, 
+              { 
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: scaleAnim }
+                ]
+              }
+            ]}
+          >
+            <Animated.View 
+              style={[
+                styles.searchContent,
+                {
+                  opacity: fadeAnim,
+                  transform: [
+                    { translateY: slideAnim.interpolate({
+                      inputRange: [0, 50],
+                      outputRange: [0, 20]
+                    })}
+                  ]
+                }
+              ]}
+            >
+              <Text style={styles.searchText}>Search suggestions here</Text>
+            </Animated.View>
           </Animated.View>
         )}
       </View>
@@ -104,6 +163,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: "100%",
-    padding: 20
+    padding: 20,
+    backfaceVisibility: 'hidden',
+  },
+  searchContent: {
+    flex: 1,
+  },
+  searchText: {
+    color: '#ffffff',
+    fontSize: 16,
   }
 })
