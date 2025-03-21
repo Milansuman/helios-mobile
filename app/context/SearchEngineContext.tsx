@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type SearchEngine = 'google' | 'bing' | 'perplexity';
+type SearchEngine = 'google' | 'bing' | 'perplexity' | { id: 'custom'; name: string; url: string };
 
 interface SearchEngineContextType {
   searchEngine: SearchEngine | null;
@@ -17,7 +17,7 @@ export function SearchEngineProvider({ children }: { children: React.ReactNode }
   const [searchEngine, setSearchEngineState] = useState<SearchEngine | null>(null);
 
   const setSearchEngine = async (engine: SearchEngine) => {
-    await AsyncStorage.setItem('preferred-search-engine', engine);
+    await AsyncStorage.setItem('preferred-search-engine', JSON.stringify(engine));
     setSearchEngineState(engine);
   };
 

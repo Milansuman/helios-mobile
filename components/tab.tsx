@@ -78,12 +78,18 @@ export function Tab({url, onUrlChange}: Props){
     if (!searchEngine) {
       setShowEngineSelect(true);
     } else {
-      const searchUrls = {
-        google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-        bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
-        perplexity: `https://www.perplexity.ai/search?q=${encodeURIComponent(query)}`
-      };
-      setText(searchUrls[searchEngine]);
+      if (typeof searchEngine === 'string') {
+        const searchUrls = {
+          google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+          bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+          perplexity: `https://www.perplexity.ai/search?q=${encodeURIComponent(query)}`
+        };
+        setText(searchUrls[searchEngine]);
+      } else {
+        // Handle custom search engine
+        const searchUrl = searchEngine.url.replace('{query}', encodeURIComponent(query));
+        setText(searchUrl);
+      }
     }
   };
 

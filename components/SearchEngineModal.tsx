@@ -26,7 +26,11 @@ export function SearchEngineModal({ visible, onClose, onSelect }: SearchEngineMo
 
   const handleCustomSubmit = () => {
     if (customName && customUrl) {
-      onSelect('custom' as 'google' | 'bing' | 'perplexity');
+      onSelect({ 
+        id: 'custom',
+        name: customName,
+        url: customUrl
+      });
       onClose();
     }
   };
