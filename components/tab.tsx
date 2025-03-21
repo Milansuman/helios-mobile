@@ -7,6 +7,7 @@ import {Link2} from "lucide-react-native"
 import { GradientLoader } from './GradientLoader';
 import { Modal, Pressable } from "react-native";
 import { useSearchEngine } from "@/app/context/SearchEngineContext";
+import { SearchEngineModal } from './SearchEngineModal';
 
 
 interface Props{
@@ -166,47 +167,16 @@ export function Tab({url, onUrlChange}: Props){
           </Animated.View>
         )}
       </View>
-      <Modal
+      <SearchEngineModal
         visible={showEngineSelect}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowEngineSelect(false)}
-      >
-        <View style={{
-          flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <View style={[{ backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', padding: 20, borderRadius: 10, width: '80%' }]}>
-            <Text style={[{ color: isDark ? '#FFFFFF' : '#000000', fontSize: 18, fontWeight: 'bold', marginBottom: 10 }]}>
-              Choose your preferred search engine
-            </Text>
-            {(['google', 'bing', 'perplexity'] as const).map((engine) => (
-              <Pressable
-                key={engine}
-                style={[{
-                  padding: 10,
-                  marginVertical: 5,
-                  borderRadius: 5,
-                  backgroundColor: 'rgba(0, 0, 0, 0.05)'
-                }]}
-                onPress={() => {
-                  setSearchEngine(engine);
-                  setShowEngineSelect(false);
-                  handleSearch(searchQuery);
-                }}
-              >
-                <Text style={[{ color: isDark ? '#FFFFFF' : '#000000' }]}>
-                  {engine.charAt(0).toUpperCase() + engine.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowEngineSelect(false)}
+        onSelect={(engine) => {
+          setSearchEngine(engine);
+          handleSearch(searchQuery);
+        }}
+      />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
