@@ -1,9 +1,13 @@
 import {WebView} from "react-native-webview"
 import { View, StyleSheet, BackHandler, Keyboard, Animated, Text } from "react-native"
 import { useEffect, useState, useRef } from "react"
-
+import { useTheme } from "@/app/context/ThemeContext"
 import { Search } from "./input"
 import {Link2} from "lucide-react-native"
+import { GradientLoader } from './GradientLoader';
+import { Modal, Pressable } from "react-native";
+import { useSearchEngine } from "@/app/context/SearchEngineContext";
+import { SearchEngineModal } from './SearchEngineModal';
 
 
 interface Props{
@@ -52,52 +56,78 @@ const useSearchAnimation = (isSearching: boolean) => {
 }
 
 export function Tab({url, onUrlChange}: Props){
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [text, setText] = useState(url)
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchSuggestionsShown, setIsSearchSuggestionsShown] = useState(false);
   const webview = useRef<WebView | null>(null)
   const { fadeAnim, slideAnim, scaleAnim } = useSearchAnimation(isSearching)
+  const [isLoading, setIsLoading] = useState(false);
+  const { searchEngine, setSearchEngine } = useSearchEngine();
+  const [showEngineSelect, setShowEngineSelect] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-      if(webview.current){
-        webview.current.goBack();
-      }
-      return true;
-    })
-
-    return () => backHandler.remove();
-  })
-
-  useEffect(() => {
-    const keyboardShowHandler = Keyboard.addListener("keyboardDidShow", () => {
-      setIsSearching(true);
-    })
-
-    const keyboardHideHandler = Keyboard.addListener("keyboardDidHide", () => {
-      setIsSearching(false);
-    })
-
-    return () => {
-      keyboardShowHandler.remove();
-      keyboardHideHandler.remove();
+  const handleSearch = (query: string) => {
+    if (isValidUrl(query)) {
+      setText(query.startsWith('http') ? query : `https://${query}`);
+      return;
     }
-  })
 
-  useEffect(() => {
-    setIsSearchSuggestionsShown(true);
-  }, [isSearching]);
+    setSearchQuery(query);
+    if (!searchEngine) {
+      setShowEngineSelect(true);
+    } else {
+      const searchUrls = {
+        google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+        bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+        perplexity: `https://www.perplexity.ai/search?q=${encodeURIComponent(query)}`
+      };
+      setText(searchUrls[searchEngine]);
+    }
+  };
+
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return /^[\w-]+\.\w{2,}(\.\w{2,})?$/.test(string);
+    }
+  };
 
   return (
     <View style={styles.root}>
+      <View style={[
+        styles.panel,
+        { backgroundColor: isDark ? '#141414' : '#FFFFFF' }
+      ]}>
+        <View style={{flexDirection: "row", gap: 10, flex: 1, alignItems: "center"}}>
+          <Search 
+            text={text} 
+            onTextChange={(newText) => {
+              handleSearch(newText);
+            }}
+            onFocusChanged={setIsSearching}
+          />
+          <Link2 color={isDark ? '#FFFFFF' : '#000000'}/>
+        </View>
+      </View>
+      
+      {isLoading && <GradientLoader />}
+      
       <View style={styles.webviewSection}>
-        <WebView source={{
-            uri: text
-          }}
+        <WebView 
+          source={{ uri: text }}
           onLoadStart={(event) => {
-            setText(event.nativeEvent.url)
+            setText(event.nativeEvent.url);
+            setIsLoading(true);
+          }}
+          onLoadEnd={() => {
+            setIsLoading(false);
           }}
           ref={webview}
+          style={styles.webview}
         />
         {isSearching && (
           <Animated.View 
@@ -105,6 +135,7 @@ export function Tab({url, onUrlChange}: Props){
               styles.search, 
               { 
                 opacity: fadeAnim,
+                backgroundColor: isDark ? '#141414' : '#FFFFFF',
                 transform: [
                   { translateY: slideAnim },
                   { scale: scaleAnim }
@@ -126,40 +157,55 @@ export function Tab({url, onUrlChange}: Props){
                 }
               ]}
             >
-              <Text style={styles.searchText}>Search suggestions here</Text>
+              <Text style={[
+                styles.searchText,
+                { color: isDark ? '#FFFFFF' : '#000000' }
+              ]}>
+                Search suggestions here
+              </Text>
             </Animated.View>
           </Animated.View>
         )}
       </View>
-      <View style={styles.panel}>
-        <View style={{flexDirection: "row", gap: 10, flex: 1, alignItems: "center"}}>
-          <Search 
-            text={text} 
-            onTextChange={setText}
-          />
-          <Link2 color="#ffffff"/>
-        </View>
-      </View>
+      <SearchEngineModal
+        visible={showEngineSelect}
+        onClose={() => setShowEngineSelect(false)}
+        onSelect={(engine) => {
+          setSearchEngine(engine);
+          handleSearch(searchQuery);
+        }}
+      />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1
+    flex: 1,
+    flexDirection: 'column'
   },
   panel: {
-    backgroundColor: "#141414",
     padding: 10,
-    minHeight: 70
+    minHeight: 60,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 10
   },
   webviewSection: {
     flex: 1,
     position: "relative"
   },
-  search: {
+  webview: {
     flex: 1,
-    backgroundColor: "#141414",
+    backgroundColor: 'transparent'
+  },
+  search: {
     position: "absolute",
     width: "100%",
     height: "100%",
@@ -170,7 +216,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchText: {
-    color: '#ffffff',
     fontSize: 16,
   }
 })
