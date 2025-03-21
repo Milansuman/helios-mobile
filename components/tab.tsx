@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { useTheme } from "@/app/context/ThemeContext"
 import { Search } from "./input"
 import {Link2} from "lucide-react-native"
+import { GradientLoader } from './GradientLoader';
 
 
 interface Props{
@@ -59,6 +60,7 @@ export function Tab({url, onUrlChange}: Props){
   const [isSearchSuggestionsShown, setIsSearchSuggestionsShown] = useState(false);
   const webview = useRef<WebView | null>(null)
   const { fadeAnim, slideAnim, scaleAnim } = useSearchAnimation(isSearching)
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -106,11 +108,17 @@ export function Tab({url, onUrlChange}: Props){
         </View>
       </View>
       
+      {isLoading && <GradientLoader />}
+      
       <View style={styles.webviewSection}>
         <WebView 
           source={{ uri: text }}
           onLoadStart={(event) => {
-            setText(event.nativeEvent.url)
+            setText(event.nativeEvent.url);
+            setIsLoading(true);
+          }}
+          onLoadEnd={() => {
+            setIsLoading(false);
           }}
           ref={webview}
           style={styles.webview}
