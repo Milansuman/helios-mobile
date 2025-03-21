@@ -5,6 +5,8 @@ import { useTheme } from "@/app/context/ThemeContext"
 import { Search } from "./input"
 import {Link2} from "lucide-react-native"
 import { GradientLoader } from './GradientLoader';
+import { Modal, Pressable } from "react-native";
+import { useSearchEngine } from "@/app/context/SearchEngineContext";
 
 
 interface Props{
@@ -61,36 +63,37 @@ export function Tab({url, onUrlChange}: Props){
   const webview = useRef<WebView | null>(null)
   const { fadeAnim, slideAnim, scaleAnim } = useSearchAnimation(isSearching)
   const [isLoading, setIsLoading] = useState(false);
+  const { searchEngine, setSearchEngine } = useSearchEngine();
+  const [showEngineSelect, setShowEngineSelect] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-      if(webview.current){
-        webview.current.goBack();
-      }
-      return true;
-    })
-
-    return () => backHandler.remove();
-  })
-
-  useEffect(() => {
-    const keyboardShowHandler = Keyboard.addListener("keyboardDidShow", () => {
-      setIsSearching(true);
-    })
-
-    const keyboardHideHandler = Keyboard.addListener("keyboardDidHide", () => {
-      setIsSearching(false);
-    })
-
-    return () => {
-      keyboardShowHandler.remove();
-      keyboardHideHandler.remove();
+  const handleSearch = (query: string) => {
+    if (isValidUrl(query)) {
+      setText(query.startsWith('http') ? query : `https://${query}`);
+      return;
     }
-  })
 
-  useEffect(() => {
-    setIsSearchSuggestionsShown(true);
-  }, [isSearching]);
+    setSearchQuery(query);
+    if (!searchEngine) {
+      setShowEngineSelect(true);
+    } else {
+      const searchUrls = {
+        google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+        bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+        perplexity: `https://www.perplexity.ai/search?q=${encodeURIComponent(query)}`
+      };
+      setText(searchUrls[searchEngine]);
+    }
+  };
+
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return /^[\w-]+\.\w{2,}(\.\w{2,})?$/.test(string);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -101,7 +104,9 @@ export function Tab({url, onUrlChange}: Props){
         <View style={{flexDirection: "row", gap: 10, flex: 1, alignItems: "center"}}>
           <Search 
             text={text} 
-            onTextChange={setText}
+            onTextChange={(newText) => {
+              handleSearch(newText);
+            }}
             onFocusChanged={setIsSearching}
           />
           <Link2 color={isDark ? '#FFFFFF' : '#000000'}/>
@@ -161,6 +166,45 @@ export function Tab({url, onUrlChange}: Props){
           </Animated.View>
         )}
       </View>
+      <Modal
+        visible={showEngineSelect}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEngineSelect(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <View style={[{ backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', padding: 20, borderRadius: 10, width: '80%' }]}>
+            <Text style={[{ color: isDark ? '#FFFFFF' : '#000000', fontSize: 18, fontWeight: 'bold', marginBottom: 10 }]}>
+              Choose your preferred search engine
+            </Text>
+            {(['google', 'bing', 'perplexity'] as const).map((engine) => (
+              <Pressable
+                key={engine}
+                style={[{
+                  padding: 10,
+                  marginVertical: 5,
+                  borderRadius: 5,
+                  backgroundColor: 'rgba(0, 0, 0, 0.05)'
+                }]}
+                onPress={() => {
+                  setSearchEngine(engine);
+                  setShowEngineSelect(false);
+                  handleSearch(searchQuery);
+                }}
+              >
+                <Text style={[{ color: isDark ? '#FFFFFF' : '#000000' }]}>
+                  {engine.charAt(0).toUpperCase() + engine.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }

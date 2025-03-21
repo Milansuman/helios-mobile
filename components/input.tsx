@@ -48,7 +48,7 @@ export function Search({text, onTextChange, onFocusChanged}: SearchProps){
         placeholderTextColor={isDark ? '#8a8a8d' : '#666666'}
         style={styles.input}
         defaultValue={text}
-        onEndEditing={(e) => onTextChange?.(e.nativeEvent.text)}
+        onSubmitEditing={(e) => onTextChange?.(e.nativeEvent.text)}
         onFocus={() => onFocusChanged?.(true)}
         onBlur={() => onFocusChanged?.(false)}
         keyboardType="url"
