@@ -1,50 +1,113 @@
-# Welcome to your Expo app 👋
+# Helios Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Helios Mobile is a modern, feature-rich mobile browser application built with React Native and Expo. It offers a seamless browsing experience with support for multiple search engines, customizable themes, and an intuitive user interface.
 
-## Get started
+## Features
 
-1. Install dependencies
+### 🔍 Multi-Search Engine Support
+- Built-in support for popular search engines:
+  - Google
+  - Bing
+  - Perplexity
+- Custom search engine configuration
+- Persistent search engine preferences
 
-   ```bash
-   npm install
-   ```
+### 🎨 Theme Customization
+- Dynamic Dark/Light theme switching
+- Smooth theme transitions
+- System-wide theme consistency
 
-2. Start the app
+### 🌐 Browser Features
+- Clean and intuitive URL bar
+- Loading progress indicator
+- Smart URL validation and auto-completion
+- Secure browsing experience
 
-   ```bash
-    npx expo start
-   ```
+## Getting Started
 
-In the output, you'll find options to open the app in a
+### Prerequisites
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js (LTS version recommended)
+- npm or yarn package manager
+- Expo CLI
+- iOS Simulator (for iOS development)
+- Android Studio and Android SDK (for Android development)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Installation
 
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clone the repository:
 ```bash
-npm run reset-project
+git clone [repository-url]
+cd helios-mobile
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Learn more
+3. Start the development server:
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. Run on your preferred platform:
+- Press `i` to run on iOS simulator
+- Press `a` to run on Android emulator
+- Scan the QR code with Expo Go app on your device
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Project Structure
 
-## Join the community
+```
+/
+├── app/                # Main application code
+│   ├── context/        # React Context providers
+│   │   ├── SearchEngineContext.tsx  # Search engine preferences
+│   │   ├── TabsContext.tsx          # Browser tab management
+│   │   └── ThemeContext.tsx         # Theme configuration
+│   └── components/     # Shared components
+├── assets/            # Static assets
+│   ├── fonts/         # Custom fonts
+│   └── images/        # Images and icons
+├── components/        # Core components
+│   ├── GradientLoader.tsx      # Loading indicator
+│   ├── SearchEngineModal.tsx   # Search engine selector
+│   ├── input.tsx              # URL/Search input
+│   └── tab.tsx               # Browser tab implementation
+└── package.json       # Project dependencies
+```
 
-Join our community of developers creating universal apps.
+## Development
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Key Components
+
+- `SearchEngineModal`: Handles search engine selection and configuration
+- `Tab`: Manages browser tab functionality and URL handling
+- `GradientLoader`: Provides visual feedback during page loads
+- `ThemeContext`: Manages application-wide theme settings
+
+### State Management
+
+The application uses React Context for state management:
+- `SearchEngineContext`: Manages search engine preferences and persistence
+- `TabsContext`: Handles browser tab state and navigation
+- `ThemeContext`: Controls theme settings and transitions
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built with [React Native](https://reactnative.dev/)
+- Powered by [Expo](https://expo.dev)
+- Uses [Lucide React Native](https://lucide.dev) for icons
+- Implements [React Native WebView](https://github.com/react-native-webview/react-native-webview) for browsing functionality
