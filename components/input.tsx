@@ -1,5 +1,6 @@
-import {View, TextInput, StyleSheet} from "react-native"
-import { Search as SearchIcon } from "lucide-react-native"
+import { View, TextInput, StyleSheet, Pressable } from "react-native"
+import { Search as SearchIcon, Moon, Sun } from "lucide-react-native"
+import { useTheme } from "@/app/context/ThemeContext"
 
 interface SearchProps {
   text: string,
@@ -8,38 +9,62 @@ interface SearchProps {
 }
 
 export function Search({text, onTextChange, onFocusChanged}: SearchProps){
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const styles = StyleSheet.create({
+    root: {
+      flex: 1,
+      borderRadius: 12,
+      backgroundColor: isDark ? '#2A2A2A' : '#F0F0F0',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      flexDirection: "row",
+      gap: 8,
+      alignItems: "center",
+      minHeight: 48,
+      overflow: "hidden"
+    },
+    input: {
+      flex: 1,
+      color: isDark ? '#FFFFFF' : '#000000',
+      fontSize: 16,
+    },
+    themeButton: {
+      padding: 6,
+      borderRadius: 8,
+      backgroundColor: isDark ? '#3A3A3A' : '#E0E0E0',
+    }
+  });
+
   return (
-    <View style={searchStyles.root}>
-      <SearchIcon color="#8a8a8d" size={20}/>
+    <View style={styles.root}>
+      <SearchIcon 
+        color={isDark ? '#8a8a8d' : '#666666'} 
+        size={20}
+      />
       <TextInput 
         placeholder="Search or enter website" 
-        placeholderTextColor="#8a8a8d"
-        style={{
-          color: "#ffffff",
-          flex: 1
-        }}
+        placeholderTextColor={isDark ? '#8a8a8d' : '#666666'}
+        style={styles.input}
         defaultValue={text}
         onEndEditing={(e) => onTextChange?.(e.nativeEvent.text)}
         onFocus={() => onFocusChanged?.(true)}
         onBlur={() => onFocusChanged?.(false)}
         keyboardType="url"
         selectTextOnFocus
+        autoCapitalize="none"
       />
+      <Pressable 
+        style={styles.themeButton} 
+        onPress={toggleTheme}
+      >
+        {isDark ? (
+          <Sun size={20} color="#8a8a8d" />
+        ) : (
+          <Moon size={20} color="#666666" />
+        )}
+      </Pressable>
     </View>
   )
 }
-
-const searchStyles = StyleSheet.create({
-  root: {
-    flex: 1,
-    borderRadius: 10,
-    boxShadow: "0px 0px 10px #ffffff23",
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    flexDirection: "row",
-    gap: 3,
-    alignItems: "center",
-    minHeight: 45,
-    overflow: "scroll"
-  }
-})
