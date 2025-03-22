@@ -47,7 +47,13 @@ export function TabGrid({ visible, onClose }: TabGridProps) {
                   style={[styles.tabUrl, { color: isDark ? '#FFFFFF' : '#000000' }]} 
                   numberOfLines={1}
                 >
-                  {new URL(tab.url).hostname}
+                  {tab.url ? (() => {
+                    try {
+                      return new URL(tab.url).hostname;
+                    } catch (e) {
+                      return tab.url;
+                    }
+                  })() : 'New Tab'}
                 </Text>
                 <TouchableOpacity
                   style={styles.closeTab}

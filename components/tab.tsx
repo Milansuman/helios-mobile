@@ -67,7 +67,7 @@ export function Tab({url, onUrlChange}: Props) {
   const [text, setText] = useState(url);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchSuggestionsShown, setIsSearchSuggestionsShown] = useState(false);
-  const webview = useRef<WebView | null>(null)
+  const webviewRefs = useRef<{[key: string]: WebView | null}>({});
   const { fadeAnim, slideAnim, scaleAnim } = useSearchAnimation(isSearching)
   const [isLoading, setIsLoading] = useState(false);
   const { searchEngine, setSearchEngine } = useSearchEngine();
@@ -75,13 +75,18 @@ export function Tab({url, onUrlChange}: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
+  // Store scroll positions for each tab
+  const scrollPositions = useRef<{[key: string]: number}>({});
+
   // Initialize text state with the active tab's URL
   useEffect(() => {
     const currentTab = tabs.find(tab => tab.id === activeTab);
     if (currentTab) {
       setText(currentTab.url);
-      if (webview.current) {
-        webview.current.reload();
+      // Don't reload the WebView when switching tabs
+      const webviewRef = webviewRefs.current[currentTab.id];
+      if (webviewRef && scrollPositions.current[currentTab.id]) {
+        webviewRef.injectJavaScript(`window.scrollTo(0, ${scrollPositions.current[currentTab.id]})`);
       }
     }
   }, [activeTab]);
@@ -155,35 +160,59 @@ export function Tab({url, onUrlChange}: Props) {
       {isLoading && <GradientLoader />}
       
       <View style={styles.webviewSection}>
-        <ScrollView
-          contentContainerStyle={{flex: 1}}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                webview.current?.reload();
-                setTimeout(() => setRefreshing(false), 1500);
-              }}
-              tintColor="transparent"
-            />
-          }
-        >
-          <WebView 
-            key={activeTab} // Add key to force WebView recreation on tab change
-            source={{ uri: currentTab.url }}
-            onLoadStart={(event) => {
-              handleUrlChange(event.nativeEvent.url);
-              setIsLoading(true);
-            }}
-            onLoadEnd={() => {
-              setIsLoading(false);
-            }}
-            ref={webview}
-            style={styles.webview}
-          />
-        </ScrollView>
-        {refreshing && <LoadingAnimation />}
+        <View style={{flex: 1}}>
+          {tabs.map(tab => (
+            <View 
+              key={tab.id} 
+              style={[styles.webview, { display: tab.id === activeTab ? 'flex' : 'none' }]}
+            >
+              <WebView 
+                source={{ uri: tab.url }}
+                onLoadStart={(event) => {
+                  if (tab.id === activeTab) {
+                    handleUrlChange(event.nativeEvent.url);
+                    setIsLoading(true);
+                  }
+                }}
+                onLoadEnd={() => {
+                  if (tab.id === activeTab) {
+                    setIsLoading(false);
+                  }
+                }}
+                ref={(ref) => webviewRefs.current[tab.id] = ref}
+                style={{flex: 1}}
+                cacheEnabled={true}
+                cacheMode="LOAD_CACHE_ELSE_NETWORK"
+                domStorageEnabled={true}
+                javaScriptEnabled={true}
+                thirdPartyCookiesEnabled={true}
+                sharedCookiesEnabled={true}
+                incognito={false}
+                pullToRefreshEnabled={false}
+                nestedScrollEnabled={true}
+                onNavigationStateChange={(navState) => {
+                  if (tab.id === activeTab) {
+                    handleUrlChange(navState.url);
+                  }
+                }}
+                androidLayerType="hardware"
+                renderToHardwareTextureAndroid={true}
+                allowFileAccess={true}
+                saveFormDataDisabled={false}
+                allowUniversalAccessFromFileURLs={true}
+                injectedJavaScript="window.ReactNativeWebView.postMessage(JSON.stringify({scrollY: window.scrollY}));"
+                onMessage={(event) => {
+                  if (tab.id === activeTab) {
+                    const data = JSON.parse(event.nativeEvent.data);
+                    if (data.scrollY) {
+                      webviewRefs.current[tab.id]?.injectJavaScript(`window.scrollTo(0, ${data.scrollY})`);
+                    }
+                  }
+                }}
+              />
+            </View>
+          ))}
+      </View>
         {isSearching && (
           <Animated.View 
             style={[
