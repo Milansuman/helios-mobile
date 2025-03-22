@@ -16,6 +16,14 @@ interface TabsContextType {
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
+export default function TabsContextProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <TabsProvider>
+      {children}
+    </TabsProvider>
+  );
+}
+
 export function TabsProvider({ children }: { children: React.ReactNode }) {
   const [tabs, setTabs] = useState<Tab[]>([{ id: '1', url: 'https://google.com' }]);
   const [activeTab, setActiveTab] = useState('1');

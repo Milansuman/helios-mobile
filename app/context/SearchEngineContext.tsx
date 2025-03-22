@@ -13,6 +13,14 @@ const SearchEngineContext = createContext<SearchEngineContextType>({
   setSearchEngine: () => {}
 });
 
+export default function SearchEngineContextProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SearchEngineProvider>
+      {children}
+    </SearchEngineProvider>
+  );
+}
+
 export function SearchEngineProvider({ children }: { children: React.ReactNode }) {
   const [searchEngine, setSearchEngineState] = useState<SearchEngine | null>(null);
 

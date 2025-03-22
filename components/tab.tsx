@@ -1,5 +1,5 @@
 import {WebView} from "react-native-webview"
-import { View, StyleSheet, BackHandler, Keyboard, Animated, Text } from "react-native"
+import { View, StyleSheet, BackHandler, Keyboard, Animated, Text, RefreshControl, ScrollView } from "react-native"
 import { useEffect, useState, useRef } from "react"
 import { useTheme } from "@/app/context/ThemeContext"
 import { Search } from "./input"
@@ -8,6 +8,10 @@ import { GradientLoader } from './GradientLoader';
 import { Modal, Pressable } from "react-native";
 import { useSearchEngine } from "@/app/context/SearchEngineContext";
 import { SearchEngineModal } from './SearchEngineModal';
+import { LoadingAnimation } from './LoadingAnimation';
+import { TabBar } from './TabBar';
+import { TabGrid } from './TabGrid';
+import { useTabs } from "@/app/context/TabsContext";
 
 
 interface Props{
@@ -55,10 +59,12 @@ const useSearchAnimation = (isSearching: boolean) => {
   return { fadeAnim, slideAnim, scaleAnim }
 }
 
-export function Tab({url, onUrlChange}: Props){
+export function Tab({url, onUrlChange}: Props) {
+  const { activeTab, tabs, updateTabUrl } = useTabs();
+  const [showGrid, setShowGrid] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const [text, setText] = useState(url)
+  const [text, setText] = useState(url);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchSuggestionsShown, setIsSearchSuggestionsShown] = useState(false);
   const webview = useRef<WebView | null>(null)
@@ -67,10 +73,34 @@ export function Tab({url, onUrlChange}: Props){
   const { searchEngine, setSearchEngine } = useSearchEngine();
   const [showEngineSelect, setShowEngineSelect] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Initialize text state with the active tab's URL
+  useEffect(() => {
+    const currentTab = tabs.find(tab => tab.id === activeTab);
+    if (currentTab) {
+      setText(currentTab.url);
+      if (webview.current) {
+        webview.current.reload();
+      }
+    }
+  }, [activeTab]);
+
+  // Update URL only for the active tab
+  const handleUrlChange = (newUrl: string) => {
+    if (activeTab) {
+      setText(newUrl);
+      updateTabUrl(activeTab, newUrl);
+      if (onUrlChange) {
+        onUrlChange(newUrl);
+      }
+    }
+  };
 
   const handleSearch = (query: string) => {
     if (isValidUrl(query)) {
-      setText(query.startsWith('http') ? query : `https://${query}`);
+      const newUrl = query.startsWith('http') ? query : `https://${query}`;
+      handleUrlChange(newUrl);
       return;
     }
 
@@ -84,11 +114,10 @@ export function Tab({url, onUrlChange}: Props){
           bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
           perplexity: `https://www.perplexity.ai/search?q=${encodeURIComponent(query)}`
         };
-        setText(searchUrls[searchEngine]);
+        handleUrlChange(searchUrls[searchEngine]);
       } else {
-        // Handle custom search engine
-        const searchUrl = searchEngine.url.replace('{query}', encodeURIComponent(query));
-        setText(searchUrl);
+        const newUrl = searchEngine.url.replace('{query}', encodeURIComponent(query));
+        handleUrlChange(newUrl);
       }
     }
   };
@@ -102,12 +131,15 @@ export function Tab({url, onUrlChange}: Props){
     }
   };
 
+  // Only render WebView if this is the active tab
+  const currentTab = tabs.find(tab => tab.id === activeTab);
+  if (!currentTab) {
+    return null;
+  }
+
   return (
     <View style={styles.root}>
-      <View style={[
-        styles.panel,
-        { backgroundColor: isDark ? '#141414' : '#FFFFFF' }
-      ]}>
+      <View style={[styles.panel, { backgroundColor: isDark ? '#141414' : '#FFFFFF' }]}>
         <View style={{flexDirection: "row", gap: 10, flex: 1, alignItems: "center"}}>
           <Search 
             text={text} 
@@ -123,18 +155,35 @@ export function Tab({url, onUrlChange}: Props){
       {isLoading && <GradientLoader />}
       
       <View style={styles.webviewSection}>
-        <WebView 
-          source={{ uri: text }}
-          onLoadStart={(event) => {
-            setText(event.nativeEvent.url);
-            setIsLoading(true);
-          }}
-          onLoadEnd={() => {
-            setIsLoading(false);
-          }}
-          ref={webview}
-          style={styles.webview}
-        />
+        <ScrollView
+          contentContainerStyle={{flex: 1}}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                webview.current?.reload();
+                setTimeout(() => setRefreshing(false), 1500);
+              }}
+              tintColor="transparent"
+            />
+          }
+        >
+          <WebView 
+            key={activeTab} // Add key to force WebView recreation on tab change
+            source={{ uri: currentTab.url }}
+            onLoadStart={(event) => {
+              handleUrlChange(event.nativeEvent.url);
+              setIsLoading(true);
+            }}
+            onLoadEnd={() => {
+              setIsLoading(false);
+            }}
+            ref={webview}
+            style={styles.webview}
+          />
+        </ScrollView>
+        {refreshing && <LoadingAnimation />}
         {isSearching && (
           <Animated.View 
             style={[
@@ -181,6 +230,8 @@ export function Tab({url, onUrlChange}: Props){
           handleSearch(searchQuery);
         }}
       />
+      <TabGrid visible={showGrid} onClose={() => setShowGrid(false)} />
+      <TabBar onShowGrid={() => setShowGrid(true)} />
     </View>
   );
 }
